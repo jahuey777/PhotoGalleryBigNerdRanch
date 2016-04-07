@@ -10,8 +10,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jaimejahuey on 4/4/16.
@@ -21,6 +26,7 @@ public class PhotoGalleryFragment extends Fragment
     private static final String TAG = "PhotoGalleryFragment";
 
     private RecyclerView mPhotoRecyclerView;
+    private List<GalleryItem> mItems = new ArrayList<>();
 
     public static PhotoGalleryFragment newInstance()
     {
@@ -43,19 +49,78 @@ public class PhotoGalleryFragment extends Fragment
         mPhotoRecyclerView = (RecyclerView) v.findViewById(R.id.fragment_photo_gallery_recyclerView);
         mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
 
+        setUpAdater();
 
         return v;
     }
 
-    private class FetchItemsTask extends AsyncTask<Void, Void, Void>
+    private void setUpAdater(){
+        if(isAdded()){
+            mPhotoRecyclerView.setAdapter(new PhotoAdapter(mItems));
+        }
+    }
+
+    private class FetchItemsTask extends AsyncTask<Void, Void, List<GalleryItem>>
     {
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected List<GalleryItem> doInBackground(Void... params) {
 
-                new FlickrFetchr().fetchItems();
+               return new FlickrFetchr().fetchItems();
+        }
 
-            return null;
+        @Override
+        protected void onPostExecute(List<GalleryItem> items){
+            mItems = items;
+            setUpAdater();
+
+        }
+    }
+
+    //viewHolder
+    private class PhotoHolder extends RecyclerView.ViewHolder
+    {
+        private TextView mTitleTextView;
+
+        private PhotoHolder(View itemView){
+            super(itemView);
+
+            mTitleTextView = (TextView) itemView;
+        }
+
+        public void bindGalleryItem(GalleryItem item){
+            mTitleTextView.setText(item.toString());
+        }
+    }
+
+    //adapter
+    private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder>
+    {
+        private List<GalleryItem> mGalleryItems;
+
+        public PhotoAdapter(List<GalleryItem> galleryItems){
+            mGalleryItems = galleryItems;
+        }
+
+
+        @Override
+        public PhotoHolder onCreateViewHolder(ViewGroup viewGroup, int viewType)
+        {
+            TextView textView = new TextView(getActivity());
+            return new PhotoHolder(textView);
+        }
+
+        @Override
+        public void onBindViewHolder(PhotoHolder photoHolder, int pos)
+        {
+            GalleryItem galleryItem = mGalleryItems.get(pos);
+
+            photoHolder.bindGalleryItem(galleryItem);
+        }
+
+        @Override
+        public int getItemCount(){
+            return mGalleryItems.size();
         }
     }
 }
